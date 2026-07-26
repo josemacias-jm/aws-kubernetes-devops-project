@@ -1,3 +1,36 @@
+# EKS IRSA role for LB Controller
+resource "aws_iam_role" "load_balancer_controller" {
+  name = "journal-load-balancer-controller-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+
+    Statement = [
+      {
+        Effect = "Allow"
+
+        Principal = {
+          Federated = module.eks.oidc_provider_arn
+        }
+
+        Action = "sts:AssumeRoleWithWebIdentity"
+
+        Condition = {
+          StringEquals = {
+            "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:sub" = "system:serviceaccount:kube-system:aws-load-balancer-controller"
+            "${replace(module.eks.cluster_oidc_issuer_url, "https://", "")}:aud" = "sts.amazonaws.com"
+          }
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "load_balancer_controller" {
+  role       = aws_iam_role.load_balancer_controller.name
+  policy_arn = "arn:aws:iam::021891619778:policy/AWSLoadBalancerControllerIAMPolicy"
+}
+
 # EKS IRSA role for Bedrock access
 resource "aws_iam_role" "bedrock_irsa_role" {
   name = "journal-bedrock-role"
