@@ -102,3 +102,15 @@ resource "aws_vpc_endpoint" "ec2" {
 
   security_group_ids = [aws_security_group.vpce.id]
 }
+
+# Load Balancer Interface Endpoint
+resource "aws_vpc_endpoint" "elasticloadbalancing" {
+  vpc_id              = aws_vpc.main.id
+  service_name        = "com.amazonaws.${var.region}.elasticloadbalancing"
+  vpc_endpoint_type   = "Interface"
+  private_dns_enabled = true
+
+  subnet_ids = [aws_subnet.app_1.id, aws_subnet.app_2.id]
+
+  security_group_ids = [aws_security_group.vpce.id]
+}

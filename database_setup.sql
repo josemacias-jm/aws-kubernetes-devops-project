@@ -1,10 +1,3 @@
--- Journal API Database Setup
--- This file is automatically ran upon the creation of the PostgresSQL container.
--- You will notice the following volume mount in the docker-compose.yml file:
---      
---      volumes:
---        - ../database_setup.sql:/docker-entrypoint-initdb.d/database_setup.sql
-
 -- Creates the entries table
 CREATE TABLE IF NOT EXISTS entries (
     id VARCHAR PRIMARY KEY,

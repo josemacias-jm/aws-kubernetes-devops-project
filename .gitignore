@@ -181,3 +181,6 @@ infra/.terraform/
 
 # Generated kubeconfig
 infra/kubeconfig
+
+# k8s
+k8s/secrets.yaml
