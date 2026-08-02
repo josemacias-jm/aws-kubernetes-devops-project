@@ -136,3 +136,60 @@ jobs:
           docker push "${ECR_SHA_IMAGE}"
           docker push "${ECR_LATEST_IMAGE}"
           docker push "${GHCR_LATEST_IMAGE}"
+  
+  deploy:
+    name: Deploy to EKS
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Configure kubectl
+        run: |
+          aws eks update-kubeconfig \
+            --region "${AWS_REGION}" \
+            --name "${EKS_CLUSTER_NAME}"
+          
+      - name: Verify EKS access
+        run: |
+          kubectl auth can-i get deployments \
+            --namespace "${K8S_NAMESPACE}"
+
+          kubectl get nodes
+
+      - name: Replace image placeholder in deployment.yaml
+        env:
+          IMAGE_URI: ${{ needs.build-and-push.outputs.image_uri }}
+        run: |
+          if ! grep -q "IMAGE_PLACEHOLDER" k8s/deployment.yaml; then
+            echo "IMAGE_PLACEHOLDER not found in k8s/deployment.yaml"
+            exit 1
+          fi
+
+          sed -i "s|IMAGE_PLACEHOLDER|${IMAGE_URI}|g" k8s/deployment.yaml
+
+          echo "Deploying image:"
+          grep "image:" k8s/deployment.yaml
+
+      - name: Validate K8s manifest
+        run: |
+          kubectl apply --dry-run=client -f k8s/
+
+      - name: Apply K8s manifest
+        run: |
+          kubectl apply -f k8s/
+
+      - name: Verify deployment rollout
+        run: |
+          kubectl rollout status deployment/${K8S_DEPLOYMENT} \
+            --namespace "${K8S_NAMESPACE}" \
+            --timeout=5m
