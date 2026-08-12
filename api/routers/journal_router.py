@@ -1,6 +1,7 @@
 from collections.abc import AsyncGenerator
 
 from fastapi import APIRouter, Depends, HTTPException
+from opentelemetry import metrics, trace
 
 from api.models.entry import Entry, EntryCreate
 from api.repositories.postgres_repository import PostgresDB
@@ -9,6 +10,13 @@ from api.services.llm_service import analyze_journal_entry
 
 router = APIRouter()
 
+tracer = trace.get_tracer(__name__)
+meter = metrics.get_meter(__name__)
+
+entries_created = meter.create_counter(
+    name="journal.entries.created",
+    description="Number of journal entries created successfully"
+)
 
 async def get_entry_service() -> AsyncGenerator[EntryService, None]:
     async with PostgresDB() as db:
@@ -26,7 +34,11 @@ async def create_entry(entry_data: EntryCreate, entry_service: EntryService = De
         )
 
         # Store the entry in the database
-        created_entry = await entry_service.create_entry(entry.model_dump())
+        with tracer.start_as_current_span("journal.create_entry.database") as span:
+            span.set_attribute("journal.operation", "create_entry")
+            created_entry = await entry_service.create_entry(entry.model_dump())
+
+        entries_created.add(1, {"journal.operation": "create_entry"})
 
         # Return success response (FastAPI handles datetime serialization automatically)
         return {

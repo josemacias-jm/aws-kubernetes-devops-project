@@ -23,7 +23,7 @@ output "eks_cluster_name" {
 
 output "eks_cluster_endpoint" {
   description = "Endpoint of the EKS Kubernetes API server"
-  value = module.eks.cluster_endpoint
+  value       = module.eks.cluster_endpoint
 }
 
 output "configure_kubectl_command" {
@@ -33,4 +33,8 @@ output "configure_kubectl_command" {
     var.region,
     module.eks.cluster_name
   )
+}
+
+output "adot_collector_role_arn" {
+  value = aws_iam_role.adot_collector.arn
 }

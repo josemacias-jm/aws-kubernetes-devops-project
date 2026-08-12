@@ -18,6 +18,11 @@ spec:
           image: IMAGE_PLACEHOLDER
           ports:
             - containerPort: 8000
+          env:
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://adot-collector.default.svc.cluster.local:4317
+            - name: DEPLOYMENT_ENVIRONMENT
+              value: production
           envFrom:
             - secretRef:
                 name: journal-api-secrets
