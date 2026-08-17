@@ -26,6 +26,20 @@ output "eks_cluster_endpoint" {
   value       = module.eks.cluster_endpoint
 }
 
+output "vpc_id" {
+  description = "VPC ID where the EKS cluster is deployed"
+  value       = aws_vpc.main.id
+}
+
+output "bastion_instance_id" {
+  value = aws_instance.bastion.id
+}
+
+output "rds_endpoint" {
+  description = "RDS PostgreSQL endpoint"
+  value       = aws_db_instance.postgres.endpoint
+}
+
 output "configure_kubectl_command" {
   description = "AWS CLI command to configure kubectl for the EKS cluster"
   value = format(
