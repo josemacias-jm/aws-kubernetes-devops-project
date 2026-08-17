@@ -70,6 +70,44 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.main.id
 }
 
+resource "aws_eip" "nat_1" {
+  domain = "vpc"
+
+  tags = {
+    Name = "journal-nat-eip-us-east-1a"
+  }
+}
+
+resource "aws_eip" "nat_2" {
+  domain = "vpc"
+
+  tags = {
+    Name = "journal-nat-eip-us-east-1b"
+  }
+}
+
+resource "aws_nat_gateway" "nat_1" {
+  allocation_id = aws_eip.nat_1.id
+  subnet_id     = aws_subnet.public_1.id
+
+  depends_on = [aws_internet_gateway.igw]
+
+  tags = {
+    Name = "journal-nat-us-east-1a"
+  }
+}
+
+resource "aws_nat_gateway" "nat_2" {
+  allocation_id = aws_eip.nat_2.id
+  subnet_id     = aws_subnet.public_2.id
+
+  depends_on = [aws_internet_gateway.igw]
+
+  tags = {
+    Name = "journal-nat-us-east-1b"
+  }
+}
+
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main.id
 
@@ -93,22 +131,40 @@ resource "aws_route_table_association" "public_2_assoc" {
   route_table_id = aws_route_table.public_rt.id
 }
 
-resource "aws_route_table" "app_rt" {
+resource "aws_route_table" "app_rt_1" {
   vpc_id = aws_vpc.main.id
 
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_1.id
+  }
+
   tags = {
-    Name = "journal-app-rt"
+    Name = "journal-app-rt-us-east-1a"
+  }
+}
+
+resource "aws_route_table" "app_rt_2" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block     = "0.0.0.0/0"
+    nat_gateway_id = aws_nat_gateway.nat_2.id
+  }
+
+  tags = {
+    Name = "journal-app-rt-us-east-1b"
   }
 }
 
 resource "aws_route_table_association" "app_1_assoc" {
   subnet_id      = aws_subnet.app_1.id
-  route_table_id = aws_route_table.app_rt.id
+  route_table_id = aws_route_table.app_rt_1.id
 }
 
 resource "aws_route_table_association" "app_2_assoc" {
   subnet_id      = aws_subnet.app_2.id
-  route_table_id = aws_route_table.app_rt.id
+  route_table_id = aws_route_table.app_rt_2.id
 }
 
 resource "aws_route_table" "db_rt" {
