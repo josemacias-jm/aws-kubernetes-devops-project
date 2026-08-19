@@ -80,7 +80,7 @@ spec:
       serviceAccountName: adot-collector
       containers:
         - name: adot-collector
-          image: 021891619778.dkr.ecr.us-east-1.amazonaws.com/journal-adot-collector:v0.48.0
+          image: public.ecr.aws/aws-observability/aws-otel-collector:v0.48.0
           args:
             - --config=/conf/collector.yaml
           ports:

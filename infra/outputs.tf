@@ -48,7 +48,3 @@ output "configure_kubectl_command" {
     module.eks.cluster_name
   )
 }
-
-output "adot_collector_role_arn" {
-  value = aws_iam_role.adot_collector.arn
-}
